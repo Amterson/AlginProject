@@ -14,8 +14,6 @@ import android.widget.TextView;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Description: 自定义分散对齐的TextView(中英文排版效果)
@@ -109,7 +107,6 @@ public class JustifyTextView extends TextView {
         float textSize = getTextSize();
         mLineY += textSize + getPaddingTop();
         Layout layout = getLayout();
-        // layout.getLayout()在4.4.3出现NullPointerException
         if (layout == null) {
             return;
         }
@@ -135,7 +132,7 @@ public class JustifyTextView extends TextView {
             if (!TextUtils.isEmpty(temp)) {
                 sb.append(temp);
                 lineList.add(temp);
-                if (!isPureCN(temp)) {
+                if (!isCN(temp)) {
                     sb.append(BLANK);
                 }
                 temp = "";
@@ -174,7 +171,7 @@ public class JustifyTextView extends TextView {
 
                     int length = lastWord.length();
 
-                    if (length <= 2) {
+                    if (length <= 3) {
                         List<String> tempLines = new ArrayList<>(lineList);
                         lineLists.add(tempLines);
                         lineList.clear();
@@ -187,7 +184,7 @@ public class JustifyTextView extends TextView {
                             width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
 
                             if (width > mViewWidth) {
-                                if (j > 1) {
+                                if (j > 2) {
                                     String lastFinalWord = lastWord.substring(0, j) + "-";
                                     lineList.add(lastFinalWord);
                                     List<String> tempLines = new ArrayList<>(lineList);
@@ -219,50 +216,8 @@ public class JustifyTextView extends TextView {
             }
         }
 
-//        YLLog.i("TAG", "------>lineList:" + lineList.toString());
         mLineCount += lineLists.size();
         return lineLists;
-    }
-
-    /**
-     * 容错处理（当一行的内容放不下三个时，进行切割处理）
-     *
-     * @param line     一行绘制的内容
-     * @param front    最后一个单词
-     * @param lineList
-     * @return 切割后的单词
-     */
-    private String spliteFront(StringBuilder line, String front, List<String> lineList) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(line.substring(0, line.toString().length() - front.length() - 1));
-        String lastWord = null;
-        String temp = null;
-        float width = 0;
-        for (int i = 0; i < front.length(); i++) {
-            if (temp != null) {
-                sb.append(temp);
-                temp = null;
-            }
-            sb.append(front.charAt(i));
-            width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
-            if (width > mViewWidth) {
-                lineList.add(sb.toString().substring(0, sb.toString().length() - 1));
-                temp = front.charAt(i) + "";
-                sb.delete(0, sb.toString().length());
-            }
-
-            if (i == front.length() - 1) {
-                if (temp != null) {
-                    sb.append(temp);
-                    temp = null;
-                }
-                if (sb.toString().length() != 0) {
-                    lastWord = sb.toString();
-                    sb.delete(0, sb.toString().length());
-                }
-            }
-        }
-        return lastWord;
     }
 
     /**
@@ -294,7 +249,7 @@ public class JustifyTextView extends TextView {
         for (int i = 0; i < text.length(); i++) {
             char charAt = text.charAt(i);
             if (charAt != ' ') {
-                if (!isPureCN(charAt + "")) { //英文
+                if (!isCN(charAt + "")) { //英文
                     enStr.append(charAt);
                 } else { //中文
                     if (isPunctuation(charAt)) {
@@ -332,24 +287,6 @@ public class JustifyTextView extends TextView {
      * @param paint
      */
     private synchronized void adjust(Canvas canvas, TextPaint paint) {
-
-        /*for (int j = 0; j < mParagraphWordList.size(); j++) {//遍历每一段
-            for (int i = 0; i < mParagraphLineList.get(j).size(); i++) {//遍历每一段的每一行
-                if (i == mParagraphLineList.get(j).size() - 1) {
-                    canvas.drawText(mParagraphLineList.get(j).get(i), 0, mLineY, paint);
-//                    YLLog.i("TAG", "------>line:" + mParagraphLineList.get(j).get(i));
-                } else {
-                    String line = mParagraphLineList.get(j).get(i);
-                    if (needScale(line)) {
-                        drawScaledEndLishText(canvas, line);
-//                        YLLog.i("TAG", "------>line:" + line);
-                    }
-                }
-//                YLLog.i("TAG", "------>line:" + mParagraphLineList.get(j).get(i));
-                mLineY += getLineHeight();
-            }
-            mLineY += paragraphSpacing;
-        }*/
 
         int size = mParagraphWordList.size();
 
@@ -413,10 +350,6 @@ public class JustifyTextView extends TextView {
         }
     }
 
-    private boolean needScale(String line) {
-        return !(line == null || line.length() == 0) && line.charAt(line.length() - 1) != '\n';
-    }
-
     /**
      * 功能：判断字符串是否有中文
      *
@@ -442,58 +375,6 @@ public class JustifyTextView extends TextView {
         float var2 = var0.getResources().getDisplayMetrics().density;
         return (int) (var1 * var2 + 0.5F);
     }
-
-    /**
-     * 功能：判断字符串是否是纯中文
-     *
-     * @param str
-     * @return
-     */
-    public boolean isPureCN(String str) {
-        try {
-            byte[] bytes = str.getBytes("UTF-8");
-            if (bytes.length == str.length() * 3) { //纯中文
-                return true;
-            } else if (bytes.length < str.length() * 3) {//包含中文
-                return false;
-            }
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    /**
-     * 功能：判断字符串是否是纯英文
-     *
-     * @param str
-     * @return
-     */
-    public boolean isPureEN(String str) {
-        try {
-            byte[] bytes = str.getBytes("UTF-8");
-            if (bytes.length == str.length()) { //纯英文
-                return true;
-            } else if (bytes.length < str.length() * 3) {//包含中文
-                return false;
-            }
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    public static boolean isContainChinese(String str) {
-        Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
-        Matcher m = p.matcher(str);
-        if (m.find()) {
-            return true;
-        }
-        return false;
-    }
-
 
     /**
      * 判断是否包含标点符号等内容

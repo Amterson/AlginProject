@@ -16,7 +16,7 @@ import androidx.appcompat.widget.AppCompatTextView;
  *
  * 当绘制过程比较完美时，是由于计算的剩余宽度较小，看不出来效果；
  *
- * 缺点：当存在单词较少时，会存在间隙过大的问题
+ * 缺点：当存在单词较少时，会存在间隙过大的问题，比如第一行只有两个单词时，会出现间距过大的问题
  *
  */
 public class AlignTextView extends AppCompatTextView {
