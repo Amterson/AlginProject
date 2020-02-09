@@ -14,6 +14,7 @@ import android.widget.TextView;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Description: 自定义分散对齐的TextView(中英文排版效果)
@@ -174,7 +175,7 @@ public class XQJustifyTextView extends TextView {
                     // 否则的话则截取字符串
                     String substring = sb.substring(0, sb.length() - lastWord.length() - 1);
                     sb.delete(0, sb.toString().length());
-                    sb.append(substring);
+                    sb.append(substring).append(BLANK);
                     String tempLastWord = "";
 
                     int length = lastWord.length();
@@ -190,7 +191,7 @@ public class XQJustifyTextView extends TextView {
                             width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
 
                             if (width > mViewWidth) {
-                                if (j > 2) {
+                                if (j > 2 && j <= length - 2) {
                                     // 单词截断后，前面的字符小于2个时，则不进行截断
                                     String lastFinalWord = lastWord.substring(0, j) + "-";
                                     lineList.add(lastFinalWord);
@@ -265,57 +266,41 @@ public class XQJustifyTextView extends TextView {
      * @return
      */
     private synchronized List<String> getWordList(String text) {
+        if (TextUtils.isEmpty(text)) {
+            return new ArrayList<>();
+        }
         Log.i(TAG, "getWordList ");
         List<String> frontList = new ArrayList<>();
-        StringBuilder enStr = new StringBuilder();
-        StringBuilder cnStr = new StringBuilder();
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
-            char charAt = text.charAt(i);
-            if (charAt != ' ') {
-                if (!isCN(String.valueOf(charAt))) { // 英文
-                    if (cnStr.length() != 0) {
-                        // 添加中文到集合里去
-                        frontList.add(cnStr.toString());
-                        cnStr.delete(0, cnStr.length());
+            String charAt = String.valueOf(text.charAt(i));
+            if (!Objects.equals(charAt, BLANK)) {
+                if (checkIsSymbol(charAt)) {
+                    boolean isEmptyStr = str.length() == 0;
+                    str.append(charAt);
+                    if (!isEmptyStr) {
+                        // 中英文都需要将字符串添加到这里；
+                        frontList.add(str.toString());
+                        str.delete(0, str.length());
                     }
-                    enStr.append(charAt);
-                } else { // 中文
-
-                    if (isPunctuation(charAt)) {
-                        cnStr.append(charAt);
-                    } else {
-                        if (enStr.length() != 0) {
-                            // 判断前一个字符串是英文时，添加到集合里去
-                            frontList.add(enStr.toString());
-                            enStr.delete(0, enStr.length());
-                        }
-
-                        if (cnStr.length() != 0) {
-                            // 添加中文到集合里去
-                            frontList.add(cnStr.toString());
-                            cnStr.delete(0, cnStr.length());
-                            cnStr.append(charAt);
-                        } else {
-                            cnStr.append(charAt);
-                        }
+                } else {
+                    if (isCN(str.toString())){
+                        frontList.add(str.toString());
+                        str.delete(0, str.length());
                     }
+                    str.append(charAt);
                 }
             } else {
-                if (!TextUtils.isEmpty(enStr.toString())) {
-                    frontList.add(enStr.toString().replaceAll(BLANK, ""));
-                    enStr.delete(0, enStr.length());
+                if (!TextUtils.isEmpty(str.toString())) {
+                    frontList.add(str.toString().replaceAll(BLANK, ""));
+                    str.delete(0, str.length());
                 }
             }
         }
 
-        if (enStr.length() != 0) {
-            frontList.add(enStr.toString().replaceAll(BLANK, ""));
-            enStr.delete(0, enStr.length());
-        }
-
-        if (cnStr.length() != 0) {
-            frontList.add(cnStr.toString());
-            cnStr.delete(0, cnStr.length());
+        if (str.length() != 0) {
+            frontList.add(str.toString());
+            str.delete(0, str.length());
         }
 
         return frontList;
@@ -419,38 +404,18 @@ public class XQJustifyTextView extends TextView {
 
     /**
      * 判断是否包含标点符号等内容
-     *
-     * @param ch
+     * @param s
      * @return
      */
-    public boolean isPunctuation(char ch) {
-        if (isCjkPunc(ch)) return true;
-        if (isEnPunc(ch)) return true;
+    public boolean checkIsSymbol(String s) {
+        boolean b = false;
 
-        if (0x2018 <= ch && ch <= 0x201F) return true;
-        if (ch == 0xFF01 || ch == 0xFF02) return true;
-        if (ch == 0xFF07 || ch == 0xFF0C) return true;
-        if (ch == 0xFF1A || ch == 0xFF1B) return true;
-        if (ch == 0xFF1F || ch == 0xFF61) return true;
-        if (ch == 0xFF0E) return true;
-        if (ch == 0xFF65) return true;
+        String tmp = s;
+        tmp = tmp.replaceAll("\\p{P}", "");
+        if (s.length() != tmp.length()) {
+            b = true;
+        }
 
-        return false;
-    }
-
-    private boolean isEnPunc(char ch) {
-        if (0x21 <= ch && ch <= 0x22) return true;
-        if (ch == 0x27 || ch == 0x2C) return true;
-        if (ch == 0x2E || ch == 0x3A) return true;
-        if (ch == 0x3B || ch == 0x3F) return true;
-
-        return false;
-    }
-
-    private boolean isCjkPunc(char ch) {
-        if (0x3001 <= ch && ch <= 0x3003) return true;
-        if (0x301D <= ch && ch <= 0x301F) return true;
-
-        return false;
+        return b;
     }
 }
