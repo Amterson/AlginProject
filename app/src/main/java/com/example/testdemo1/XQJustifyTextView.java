@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,6 +64,16 @@ public class XQJustifyTextView extends TextView {
      * 空格字符
      */
     private static final String BLANK = " ";
+
+    /**
+     * 英语单词元音字母
+     */
+    private String[] vowel = {"a", "e", "i", "o", "u"};
+
+    /**
+     * 英语单词元音字母集合
+     */
+    private List<String> vowels = Arrays.asList(vowel);
 
     public XQJustifyTextView(Context context) {
         this(context, null);
@@ -180,12 +191,42 @@ public class XQJustifyTextView extends TextView {
                         addLines(lineLists, lineList);
                         lastTemp = lastWord;
                     } else {
+                        int cutoffIndex = 0;
                         for (int j = 0; j < length; j++) {
 
                             tempLastWord = String.valueOf(lastWord.charAt(j));
                             sb.append(tempLastWord);
+                            if (vowels.contains(tempLastWord)) {
+                                // 根据元音字母来进行截断
+                                if (j + 1 < length) {
+                                    String nextTempLastWord = String.valueOf(lastWord.charAt(j + 1));
+                                    sb.append(nextTempLastWord);
+                                    width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
+                                    cutoffIndex = j;
+                                    if (width > mViewWidth) {
+                                        if (j > 2 && j <= length - 2) {
+                                            // 单词截断后，前面的字符小于2个时，则不进行截断
+                                            String lastFinalWord = lastWord.substring(0, cutoffIndex + 2) + "-";
+                                            lineList.add(lastFinalWord);
+                                            addLines(lineLists, lineList);
+                                            lastTemp = lastWord.substring(cutoffIndex + 2, length);
+
+                                        } else {
+                                            addLines(lineLists, lineList);
+                                            lastTemp = lastWord;
+                                        }
+                                        break;
+                                    }
+                                } else {
+                                    addLines(lineLists, lineList);
+                                    lastTemp = lastWord;
+                                    break;
+                                }
+                            }
+
                             width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
 
+                            // 找不到元音，则走默认的逻辑
                             if (width > mViewWidth) {
                                 if (j > 2 && j <= length - 2) {
                                     // 单词截断后，前面的字符小于2个时，则不进行截断
