@@ -8,8 +8,11 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Gravity;
 import android.widget.TextView;
 
+
+import androidx.annotation.Nullable;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -18,19 +21,9 @@ import java.util.Objects;
 
 /**
  * Description: 自定义分散对齐的TextView(中英文排版效果)
- * 待优化待点：中英文混排时，展示空格过大；
- * <p>
- * <p>
- * 1，先截取字符串
- * 2，将字符串里的字符拆分出来
- * 3，通过计算剩余宽度进行绘制
- * <p>
- * <p>
- * 1,中文：截取文字，依次计算排列--- 无问题
- * 2，非中文：截取单词，依次计算排列----出现间隙过大问题， 解决方案，将单词截断，用-连接
- * 3，中和非中文混排：截取单词，依次计算排列----出现间隙过大问题， 解决方案，将单词截断，用-连接
- * <p>
- * 至此，进行改造；
+ * 非中文单词换行截断
+ *
+ * @author panxuqin
  */
 public class XQJustifyTextView extends TextView {
 
@@ -80,8 +73,11 @@ public class XQJustifyTextView extends TextView {
     }
 
     public XQJustifyTextView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+        this(context, attrs, defStyleAttr, 0);
+    }
 
+    public XQJustifyTextView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override
@@ -333,7 +329,8 @@ public class XQJustifyTextView extends TextView {
 
     /**
      * 绘制最后一行文字
-     *  @param canvas
+     *
+     * @param canvas
      * @param lineWords
      * @param paint
      */
@@ -349,12 +346,39 @@ public class XQJustifyTextView extends TextView {
                 sb.append(aSplit).append(BLANK);
             }
         }
-        canvas.drawText(sb.toString(), 0, mLineY, paint);
+        /**
+         * 最后一行适配布局方向
+         * android:gravity=""
+         * android:textAlignment=""
+         * 默认不设置则为左边
+         * 如果同时设置gravity和textAlignment属性，则以textAlignment的属性为准
+         * 也就是说textAlignment的属性优先级大于gravity的属性
+         *
+         */
+        final int layoutDirection = getLayoutDirection();
+        final int absoluteGravity = Gravity.getAbsoluteGravity(getGravity(), layoutDirection);
+        int lastGravity = absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK;
+        int textAlignment = getTextAlignment();
+
+        if (TEXT_ALIGNMENT_TEXT_START == textAlignment
+                || TEXT_ALIGNMENT_VIEW_START == textAlignment
+                || Gravity.LEFT == lastGravity) {
+            canvas.drawText(sb.toString(), 0, mLineY, paint);
+        } else if (TEXT_ALIGNMENT_TEXT_END == textAlignment
+                || TEXT_ALIGNMENT_VIEW_END == textAlignment
+                || Gravity.RIGHT == lastGravity) {
+            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
+            canvas.drawText(sb.toString(), mViewWidth - width, mLineY, paint);
+        } else {
+            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
+            canvas.drawText(sb.toString(), (mViewWidth - width) / 2, mLineY, paint);
+        }
     }
 
     /**
      * 绘制左右对齐效果
-     *  @param canvas
+     *
+     * @param canvas
      * @param line
      * @param paint
      */
@@ -404,6 +428,7 @@ public class XQJustifyTextView extends TextView {
 
     /**
      * 判断是否包含标点符号等内容
+     *
      * @param s
      * @return
      */
