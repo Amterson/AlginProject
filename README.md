@@ -38,7 +38,7 @@
 当前市场上有成熟的阅读软件，最常用的就是左右对齐的排版效果，来看看当前的阅读软件是怎么解决这些问题的；
 先看一下微信读书app的显示效果：
 
-![微信读书.png](https://user-gold-cdn.xitu.io/2020/2/5/1701387d33e4cd34?w=650&h=1380&f=png&s=418088)
+![微信读书.png](https://upload-images.jianshu.io/upload_images/5274018-288ab08d7803b961?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 再看一下掌阅app的显示效果：
 
