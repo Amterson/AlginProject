@@ -31,6 +31,21 @@ public class XQJustifyTextView extends TextView {
     private static final String TAG = XQJustifyTextView.class.getSimpleName();
 
     /**
+     * 起始位置
+     */
+    private static final int GRAVITY_START = 1001;
+
+    /**
+     * 结尾位置
+     */
+    private static final int GRAVITY_END = 1002;
+
+    /**
+     * 中间位置
+     */
+    private static final int GRAVITY_CENTER = 1003;
+
+    /**
      * 绘制文字的起始Y坐标
      */
     private float mLineY;
@@ -44,6 +59,11 @@ public class XQJustifyTextView extends TextView {
      * 段落间距
      */
     private int paragraphSpacing = dipToPx(getContext(), 15);
+
+    /**
+     * 行间距
+     */
+    private int lineSpacing = dipToPx(getContext(), 2);
 
     /**
      * 当前所有行数的集合
@@ -75,6 +95,36 @@ public class XQJustifyTextView extends TextView {
      */
     private List<String> vowels = Arrays.asList(vowel);
 
+    /**
+     * 当前测量的间距
+     */
+    private int measuredWidth;
+
+    /**
+     * 左padding
+     */
+    private int paddingStart;
+
+    /**
+     * 右padding
+     */
+    private int paddingEnd;
+
+    /**
+     * 顶padding
+     */
+    private int paddingTop;
+
+    /**
+     * 底padding
+     */
+    private int paddingBottom;
+
+    /**
+     * 布局的方向
+     */
+    private int textGravity;
+
     public XQJustifyTextView(Context context) {
         this(context, null);
     }
@@ -97,12 +147,19 @@ public class XQJustifyTextView extends TextView {
         mParagraphLineList = null;
         mParagraphWordList = null;
         mLineY = 0;
-        mViewWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+        measuredWidth = getMeasuredWidth();
+        paddingStart = getPaddingStart();
+        paddingEnd = getPaddingEnd();
+        paddingTop = getPaddingTop();
+        paddingBottom = getPaddingBottom();
+        mViewWidth = measuredWidth - paddingStart - paddingEnd;
         getParagraphList();
         for (List<String> frontList : mParagraphWordList) {
             mParagraphLineList.add(getLineList(frontList));
         }
-        setMeasuredDimension(mViewWidth, (mParagraphLineList.size() - 1) * paragraphSpacing + mLineCount * getLineHeight());
+        setMeasuredDimension(measuredWidth,
+                (mParagraphLineList.size() - 1) * paragraphSpacing
+                        + mLineCount * (getLineHeight() + lineSpacing) + paddingTop + paddingBottom);
     }
 
     @Override
@@ -113,11 +170,12 @@ public class XQJustifyTextView extends TextView {
         paint.drawableState = getDrawableState();
         mLineY = 0;
         float textSize = getTextSize();
-        mLineY += textSize + getPaddingTop();
+        mLineY += textSize + paddingTop;
         Layout layout = getLayout();
         if (layout == null) {
             return;
         }
+        textGravity = getTextGravity();
         adjust(canvas, paint);
     }
 
@@ -362,7 +420,7 @@ public class XQJustifyTextView extends TextView {
                 } else {
                     drawScaledText(canvas, lineWords, paint);
                 }
-                mLineY += getLineHeight();
+                mLineY += (getLineHeight() + lineSpacing);
             }
             mLineY += paragraphSpacing;
         }
@@ -396,6 +454,22 @@ public class XQJustifyTextView extends TextView {
          * 也就是说textAlignment的属性优先级大于gravity的属性
          *
          */
+        if (GRAVITY_START == textGravity) {
+            canvas.drawText(sb.toString(), paddingStart, mLineY, paint);
+        } else if (GRAVITY_END == textGravity) {
+            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
+            canvas.drawText(sb.toString(), measuredWidth - width - paddingStart, mLineY, paint);
+        } else {
+            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
+            canvas.drawText(sb.toString(), (mViewWidth - width) / 2, mLineY, paint);
+        }
+    }
+
+    /**
+     * 获取布局的方向
+     */
+    private int getTextGravity() {
+
         final int layoutDirection = getLayoutDirection();
         final int absoluteGravity = Gravity.getAbsoluteGravity(getGravity(), layoutDirection);
         int lastGravity = absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK;
@@ -404,15 +478,13 @@ public class XQJustifyTextView extends TextView {
         if (TEXT_ALIGNMENT_TEXT_START == textAlignment
                 || TEXT_ALIGNMENT_VIEW_START == textAlignment
                 || Gravity.LEFT == lastGravity) {
-            canvas.drawText(sb.toString(), 0, mLineY, paint);
+            return GRAVITY_START;
         } else if (TEXT_ALIGNMENT_TEXT_END == textAlignment
                 || TEXT_ALIGNMENT_VIEW_END == textAlignment
                 || Gravity.RIGHT == lastGravity) {
-            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
-            canvas.drawText(sb.toString(), mViewWidth - width, mLineY, paint);
+            return GRAVITY_END;
         } else {
-            float width = StaticLayout.getDesiredWidth(sb.toString(), getPaint());
-            canvas.drawText(sb.toString(), (mViewWidth - width) / 2, mLineY, paint);
+            return GRAVITY_CENTER;
         }
     }
 
@@ -434,6 +506,13 @@ public class XQJustifyTextView extends TextView {
 
         float lineWidth = StaticLayout.getDesiredWidth(sb, getPaint());
         float cw = 0;
+        if (GRAVITY_START == textGravity) {
+            cw = paddingStart;
+        } else if (GRAVITY_END == textGravity){
+            cw = paddingEnd;
+        } else {
+            cw = paddingStart;
+        }
         float d = (mViewWidth - lineWidth) / (line.size() - 1);
         for (String aSplit : line) {
             canvas.drawText(aSplit, cw, mLineY, getPaint());

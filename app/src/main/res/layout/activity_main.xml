@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
+    android:layout_height="match_parent">
 
     <com.example.testdemo1.XQJustifyTextView
         android:id="@+id/just"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="10dp"
         android:textSize="16sp"
-        android:text="垃圾桶讲完了，哦不，是缓存层级讲完了。这里提一句，其实还有一层没有提到，因为它不在Recycler这个类中，它在ChildHelper类中，其中有个mHiddenViews,是个缓存被隐藏的ViewHolder的ArrayList。到这里我想大家对这几层缓存心里已经有个数了，但是还远远不够，这么多层缓存是怎么工作的？什么时候用什么缓存？各个缓存之间有没有什么PY交易？如果让你自己写一个LayoutManager你能处理好缓存问题么？就好比垃圾分类后，我们知道每种垃圾桶的定义和功能，但是面对大妈灵魂拷问我依然分不清自己是什么垃圾，我太难了～相比之下，RV的几个垃圾桶简单多了，下面我们一起来看看，这些个缓存都咋用。"/>
+        android:paddingEnd="20dp"
+        android:text="[垃圾桶讲完了，哦不，是缓存层级讲完了。这里提一句，其实还有一层没有提到，因为它不在Recycler这个类中，它在ChildHelper类中，其中有个mHiddenViews,是个缓存被隐藏的ViewHolder的ArrayList。到这里我想大家对这几层缓存心里已经有个数了，但是还远远不够，这么多层缓存是怎么工作的？什么时候用什么缓存？各个缓存之间有没有什么PY交易？如果让你自己写一个LayoutManager你能处理好缓存问题么？就好比垃圾分类后，我们知道每种垃圾桶的定义和功能，但是面对大妈灵魂拷问我依然分不清自己是什么垃圾，我太难了～相比之下，RV的几个垃圾桶简单多了，下面我们一起来看看，这些个缓存都咋用。"/>
 
 
     <com.example.testdemo1.AlignTextView
