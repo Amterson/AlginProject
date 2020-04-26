@@ -3,6 +3,7 @@ package com.example.testdemo1;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.text.Layout;
+import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -144,6 +145,9 @@ public class XQJustifyTextView extends TextView {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (isSpan()) {
+            return;
+        }
         mParagraphLineList = null;
         mParagraphWordList = null;
         mLineY = 0;
@@ -164,7 +168,10 @@ public class XQJustifyTextView extends TextView {
 
     @Override
     protected void onDraw(Canvas canvas) {
-
+        if (isSpan()) {
+            super.onDraw(canvas);
+            return;
+        }
         TextPaint paint = getPaint();
         paint.setColor(getCurrentTextColor());
         paint.drawableState = getDrawableState();
@@ -342,7 +349,13 @@ public class XQJustifyTextView extends TextView {
      * 获取段落
      */
     private void getParagraphList() {
-        String text = getText().toString().replaceAll("  ", "").replaceAll("   ", "").replaceAll("\\r", "").trim();
+        CharSequence charSequence = getText();
+
+        if (TextUtils.isEmpty(charSequence)) {
+            return;
+        }
+
+        String text = charSequence.toString().replaceAll("  ", "").replaceAll("   ", "").replaceAll("\\r", "").trim();
         mLineCount = 0;
         String[] items = text.split("\\n");
         mParagraphLineList = new ArrayList<>();
@@ -562,5 +575,14 @@ public class XQJustifyTextView extends TextView {
         }
 
         return b;
+    }
+
+    /**
+     * 判断是否是富文本
+     */
+    public boolean isSpan() {
+        CharSequence charSequence = getText();
+
+        return charSequence instanceof Spanned;
     }
 }
