@@ -384,9 +384,16 @@ public class XQJustifyTextView extends TextView {
             String charAt = String.valueOf(text.charAt(i));
             if (!Objects.equals(charAt, BLANK)) {
                 if (checkIsSymbol(charAt)) {
+                    int len = str.length();
                     boolean isEmptyStr = str.length() == 0;
                     str.append(charAt);
-                    if (!isEmptyStr) {
+                    // 处理连续的标点符号逻辑
+                    boolean isPreSymbol = false;
+                    if (len < str.length()) {
+                        String pre = String.valueOf(str.charAt(len));
+                        isPreSymbol = checkIsSymbol(pre);
+                    }
+                    if (!isEmptyStr && !isPreSymbol) {
                         // 中英文都需要将字符串添加到这里；
                         frontList.add(str.toString());
                         str.delete(0, str.length());
